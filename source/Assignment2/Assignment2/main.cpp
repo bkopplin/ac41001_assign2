@@ -35,25 +35,22 @@ if you prefer */
 #include <glm/gtc/type_ptr.hpp>
 
 #include "object3d.h"
+#include <stack>
 
 /* Define buffer object indices */
 GLuint positionBufferObject, colourObject, normalsBufferObject;
 GLuint sphereBufferObject, sphereNormals, sphereColours, sphereTexCoords;
 GLuint elementbuffer;
 
-GLuint program;		/* Identifier for the shader prgoram */
-GLuint vao;			/* Vertex array (Containor) object. This is the index of the VAO that will be the container for
-					   our buffer objects */
-
-GLuint colourmode;	/* Index of a uniform to switch the colour mode in the vertex shader
-					  I've included this to show you how to pass in an unsigned integer into
-					  your vertex shader. */
+GLuint program;	
+GLuint vao;	
+GLuint colourmode;
 
 /* Position and view globals */
 GLfloat angle_x, angle_inc_x, x, model_scale, z, y;
 GLfloat angle_y, angle_inc_y, angle_z, angle_inc_z;
-GLuint drawmode;			// Defines drawing mode of sphere as points, lines or filled polygons
-GLuint numlats, numlongs;	//Define the resolution of the sphere object
+GLuint drawmode;	
+GLuint numlats, numlongs;
 
 /* Uniforms*/
 GLuint modelID, viewID, projectionID;
@@ -61,7 +58,7 @@ GLuint colourmodeID;
 GLuint cubeTexID;
 GLuint sphereTexID;
 
-GLfloat aspect_ratio;		/* Aspect ratio of the window defined in the reshape callback*/
+GLfloat aspect_ratio;	
 GLuint numspherevertices;
 Cube aCube(true);
 Sphere aSphere(true);
@@ -201,14 +198,6 @@ void display()
 	/* Make the compiled shader program current */
 	glUseProgram(program);
 
-	// Define the model transformations for the cube
-	mat4 model = mat4(1.0f);
-	model = translate(model, vec3(x+0.5, y, z));
-	model = scale(model, vec3(model_scale, model_scale, model_scale));//scale equally in all axis
-	model = rotate(model, -radians(angle_x), vec3(1, 0, 0)); //rotating in clockwise direction around x-axis
-	model = rotate(model, -radians(angle_y), vec3(0, 1, 0)); //rotating in clockwise direction around y-axis
-	model = rotate(model, -radians(angle_z), vec3(0, 0, 1)); //rotating in clockwise direction around z-axis
-
 	// Projection matrix : 45° Field of View, 4:3 ratio, display range : 0.1 unit <-> 100 units
 	mat4 projection = perspective(radians(30.0f), aspect_ratio, 0.1f, 100.0f);
 
@@ -217,36 +206,65 @@ void display()
 		vec3(0, 0, 4), // Camera is at (0,0,4), in World Space
 		vec3(0, 0, 0), // and looks at the origin
 		vec3(0, 1, 0)  // Head is up (set to 0,-1,0 to look upside-down)
-		);
+	);
 
-	// Send our uniforms variables to the currently bound shader,
-	glUniformMatrix4fv(modelID, 1, GL_FALSE, &model[0][0]);
-	glUniform1ui(colourmodeID, colourmode);
-	glUniformMatrix4fv(viewID, 1, GL_FALSE, &view[0][0]);
-	glUniformMatrix4fv(projectionID, 1, GL_FALSE, &projection[0][0]);
+	// Define the model transformations for the cube
+	stack<mat4> model;
+	model.push(mat4(1.0f));
+	model.push(model.top());
+	{
+		model.top() = translate(model.top(), vec3(x + 0.5, y, z));
+		model.top() = scale(model.top(), vec3(model_scale, model_scale, model_scale));
+		model.top() = rotate(model.top(), -radians(angle_x), vec3(1, 0, 0));
+		model.top() = rotate(model.top(), -radians(angle_y), vec3(0, 1, 0));
+		model.top() = rotate(model.top(), -radians(angle_z), vec3(0, 0, 1));
 
-	/* Draw our cube*/
-	glFrontFace(GL_CW);
-	glBindTexture(GL_TEXTURE_2D, cubeTexID);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 
-	aCube.drawCube(drawmode);
+		// Send our uniforms variables to the currently bound shader,
+		glUniformMatrix4fv(modelID, 1, GL_FALSE, &model.top()[0][0]);
+		glUniform1ui(colourmodeID, colourmode);
+		glUniformMatrix4fv(viewID, 1, GL_FALSE, &view[0][0]);
+		glUniformMatrix4fv(projectionID, 1, GL_FALSE, &projection[0][0]);
+
+		/* Draw our cube*/
+		glFrontFace(GL_CW);
+		glBindTexture(GL_TEXTURE_2D, cubeTexID);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+
+		aCube.drawCube(drawmode);
+
+	}
+	model.pop();
 
 	/* Define the model transformations for our sphere */
-	model = mat4(1.0f);
-	model = translate(model, vec3(-x-0.5, 0, 0));
-	model = scale(model, vec3(model_scale/3.f, model_scale/3.f, model_scale/3.f));//scale equally in all axis
-	model = rotate(model, -radians(angle_x), vec3(1, 0, 0)); //rotating in clockwise direction around x-axis
-	model = rotate(model, -radians(angle_y), vec3(0, 1, 0)); //rotating in clockwise direction around y-axis
-	model = rotate(model, -radians(angle_z), vec3(0, 0, 1)); //rotating in clockwise direction around z-axis
-	glUniformMatrix4fv(modelID, 1, GL_FALSE, &model[0][0]);
+	model.push(model.top());
+	{
+		model.top() = translate(model.top(), vec3(-x - 0.5, 0, 0));
+		model.top() = scale(model.top(), vec3(model_scale / 3.f, model_scale / 3.f, model_scale / 3.f));//scale equally in all axis
+		model.top() = rotate(model.top(), -radians(angle_x), vec3(1, 0, 0)); //rotating in clockwise direction around x-axis
+		model.top() = rotate(model.top(), -radians(angle_y), vec3(0, 1, 0)); //rotating in clockwise direction around y-axis
+		model.top() = rotate(model.top(), -radians(angle_z), vec3(0, 0, 1)); //rotating in clockwise direction around z-axis
+		glUniformMatrix4fv(modelID, 1, GL_FALSE, &model.top()[0][0]);
 
-	/* Draw our sphere */
-	glBindTexture(GL_TEXTURE_2D, sphereTexID);
-	aSphere.drawSphere(drawmode);
+		/* Draw our sphere */
+		glBindTexture(GL_TEXTURE_2D, sphereTexID);
+		aSphere.drawSphere(drawmode);
+	}
+	model.pop();
 
-	/* monkey */
-	monkey.drawObject(drawmode);
+	
+	model.push(model.top());
+	{
+
+		glUniformMatrix4fv(modelID, 1, GL_FALSE, &model.top()[0][0]);
+
+		glBindTexture(GL_TEXTURE_2D, 0);
+
+		monkey.drawObject(drawmode);
+	}
+	model.pop();
+
+
 
 	glDisableVertexAttribArray(0);
 	glUseProgram(0);
