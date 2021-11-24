@@ -66,6 +66,8 @@ GLuint numspherevertices;
 Cube aCube(true);
 Sphere aSphere(true);
 
+Object3D monkey;
+
 using namespace std;
 using namespace glm;
 
@@ -178,6 +180,9 @@ void init(GLWrapper *glw)
 
 	int loc = glGetUniformLocation(program, "tex1");
 	if (loc >= 0) glUniform1i(loc, 0);
+
+	monkey.load_obj("..//..//objects//monkey_normals.obj");
+	monkey.overrideColour(vec4(0.5f, 0, 1.0, 1.f));
 }
 
 /* Called to update the display. Note that this function is called in the event loop in the wrapper
@@ -239,6 +244,9 @@ void display()
 	/* Draw our sphere */
 	glBindTexture(GL_TEXTURE_2D, sphereTexID);
 	aSphere.drawSphere(drawmode);
+
+	/* monkey */
+	monkey.drawObject(drawmode);
 
 	glDisableVertexAttribArray(0);
 	glUseProgram(0);
