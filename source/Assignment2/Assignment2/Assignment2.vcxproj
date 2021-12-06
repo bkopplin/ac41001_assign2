@@ -143,6 +143,8 @@
   <ItemGroup>
     <None Include="default.frag" />
     <None Include="default.vert" />
+    <None Include="terrain.frag" />
+    <None Include="terrain.vert" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\common\cube_tex.cpp" />
@@ -150,6 +152,7 @@
     <ClCompile Include="..\..\common\wrapper_glfw.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="object3d.cpp" />
+    <ClCompile Include="terrain_object.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="object3d.h" />

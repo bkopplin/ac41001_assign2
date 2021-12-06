@@ -33,6 +33,6 @@ void main()
 	fog_factor = clamp(fog_factor, 0.0, 1.0);
 
 	vec4 texcolour = texture(tex1, ftexcoord);
-	//outputColor = fcolour * texcolour;
-	outputColor = mix(fog_colour, fcolour * texcolour, fog_factor) ;
+	outputColor = fcolour * texcolour;
+	//outputColor = mix(fog_colour, fcolour * texcolour, fog_factor) ;
 }
