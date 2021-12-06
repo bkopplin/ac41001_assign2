@@ -204,11 +204,11 @@ void init(GLWrapper *glw)
 	monkey.overrideColour(vec4(1, 0, 1.0, 1.f));
 
 	/* Create the heightfield object */
-	octaves = 4;
-	perlin_scale = 2.f;
-	perlin_frequency = 2.f;
-	land_size = 20.f;
-	land_resolution = 50;
+	octaves = 8;
+	perlin_scale = 8.5f;
+	perlin_frequency = 8.2f;
+	land_size = 10;
+	land_resolution = 250;
 	heightfield = new terrain_object(octaves, perlin_frequency, perlin_scale);
 	heightfield->createTerrain(land_resolution, land_resolution, land_size, land_size);
 	//heightfield->setColour(vec3(1, 0.2, 0.0));
@@ -286,7 +286,7 @@ void display()
 		glUniformMatrix4fv(viewID[currentShader], 1, GL_FALSE, &view[0][0]);
 
 		model.top() = translate(model.top(), vec3(-x - 0.5, y, 0));
-		model.top() = scale(model.top(), vec3(model_scale / 3.f, model_scale / 3.f, model_scale / 3.f));//scale equally in all axis
+		model.top() = scale(model.top(), vec3(model_scale, model_scale / 2.f, model_scale));//scale equally in all axis
 		model.top() = rotate(model.top(), -radians(angle_x), vec3(1, 0, 0)); //rotating in clockwise direction around x-axis
 		model.top() = rotate(model.top(), -radians(angle_y), vec3(0, 1, 0)); //rotating in clockwise direction around y-axis
 		model.top() = rotate(model.top(), -radians(angle_z), vec3(0, 0, 1)); //rotating in clockwise direction around z-axis
