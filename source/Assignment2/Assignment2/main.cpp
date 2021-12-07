@@ -85,6 +85,8 @@ GLfloat rotateX, rotateY, moveFW, moveSW, moveUP, viewScale;
 GLfloat debug_goup;
 
 vec4 cameraLookAt, cameraPos;
+GLfloat aircraft_height;
+vec3 aircraft_velocity, aircraft_position;
 
 
 
@@ -149,10 +151,18 @@ void init(GLWrapper *glw)
 	colourmode = 0;
 	numlats = 60;		// Number of latitudes in our sphere
 	numlongs = 60;		// Number of longitudes in our sphere
-	rotateX = rotateY = moveFW = moveSW = moveUP = 0.0;
+	rotateX = 40;
+	rotateY = 170;
+	moveFW = 8.f;
+	moveSW = 0.0;
+	moveUP = -6.0;
 
 	cameraLookAt = vec4(0, 0, 0, 1);
 	cameraPos = vec4(0, 10, 4, 1);
+
+	aircraft_height = 2.f;
+	aircraft_position = vec3(0, 0, 0);
+	aircraft_velocity = vec3(0, 0, 0.001);
 
 	// Generate index (name) for one vertex array object
 	glGenVertexArrays(1, &vao);
@@ -192,11 +202,6 @@ void init(GLWrapper *glw)
 	//glCullFace(GL_BACK);
 
 	stbi_set_flip_vertically_on_load(true);
-	//const char* filename = "..//..//images//wood.jpg";
-	//if (!load_texture(filename, cubeTexID, true)) {
-	//	cout << "Fatal error loading texture" << endl;
-	//	exit(0);
-	//}
 
 	const char* textureFileMoon = "..//..//images//moon.jpg";
 	if (!load_texture(textureFileMoon, sphereTexID, true)) {
@@ -208,14 +213,14 @@ void init(GLWrapper *glw)
 	if (loc >= 0) glUniform1i(loc, 0);
 
 	aircraft.load_obj("..//..//objects//airbus.obj");
-	aircraft.overrideColour(vec4(1, 0, 1.0, 1.f));
+	aircraft.overrideColour(vec4(0.7f, 0.7f, 0.7f, 1.f));
 
 	/* Create the heightfield object */
 	octaves = 8;
 	perlin_scale = 8.5f;
 	perlin_frequency = 8.2f;
 	land_size = 10;
-	land_resolution = 150;
+	land_resolution = 1450;
 	heightfield = new terrain_object(octaves, perlin_frequency, perlin_scale);
 	heightfield->createTerrain(land_resolution, land_resolution, land_size, land_size);
 	//heightfield->setColour(vec3(1, 0.2, 0.0));
@@ -243,29 +248,15 @@ void display()
 	// Projection matrix : 45° Field of View, 4:3 ratio, display range : 0.1 unit <-> 100 units
 	mat4 projection = perspective(radians(30.0f), aspect_ratio, 0.1f, 100.0f);
 
-	// Camera matrix
-	//mat4 view = lookAt(
-	//	vec3(0, 10, 4), // Camera is at (0,0,4), in World Space
-	//	vec3(0, 0, 0), // and looks at the origin
-	//	vec3(0, 1, 0)  // Head is up (set to 0,-1,0 to look upside-down)
-	//);
-
-		mat4 view = lookAt(
-		vec3(cameraPos.x / cameraPos.w, cameraPos.y / cameraPos.w, cameraPos.z / cameraPos.w), // Camera is at (0,0,4), in World Space
-		vec3(cameraLookAt.x / cameraLookAt.w, cameraLookAt.y / cameraLookAt.w, cameraLookAt.z / cameraLookAt.w), // and looks at the origin
-		vec3(0, 1, 0)  // Head is up (set to 0,-1,0 to look upside-down)
+	mat4 view = lookAt(
+		vec3(0, 10, 4),
+		vec3(0, 0, 0),
+		vec3(0, 1, 0)
 	);
-
-
-	//view = rotate(view, -radians(rotateX), vec3(1, 0, 0));
-	//view = rotate(view, -radians(rotateY), vec3(0, 1, 0));
-	//view = scale(view, vec3(viewScale));
-	//view = translate(view, vec3(0, 3, 0));
-		//mat4 lookatTransform = rotate(mat4(0.f), -radians(0.f), vec3(1, 0, 0));
-
-	//mat4 lookatTransform = translate(mat4(0.f), vec3(moveFW, 0, moveSW));
-	//cameraPos = lookatTransform * cameraPos;
-	//cameraLookAt = lookatTransform * cameraLookAt;
+	view = rotate(view, -radians(rotateX), vec3(1, 0, 0));
+	view = rotate(view, -radians(rotateY), vec3(0, 1, 0));
+	view = scale(view, vec3(viewScale));
+	view = translate(view, vec3(moveSW, moveUP, moveFW));
 
 	glUniform1ui(colourmodeID[currentShader], colourmode);
 	glUniformMatrix4fv(viewID[currentShader], 1, GL_FALSE, &view[0][0]);
@@ -278,15 +269,12 @@ void display()
 	/* Moon */
 	model.push(model.top());
 	{
-		model.top() = translate(model.top(), vec3(0, debug_goup, 0));
-		model.top() = translate(model.top(), vec3(-x - 0.5, 0, 0));
-		model.top() = scale(model.top(), vec3(model_scale / 3.f, model_scale / 3.f, model_scale / 3.f));//scale equally in all axis
-		model.top() = rotate(model.top(), -radians(angle_x), vec3(1, 0, 0)); //rotating in clockwise direction around x-axis
-		model.top() = rotate(model.top(), -radians(angle_y), vec3(0, 1, 0)); //rotating in clockwise direction around y-axis
-		model.top() = rotate(model.top(), -radians(angle_z), vec3(0, 0, 1)); //rotating in clockwise direction around z-axis
+	
+		model.top() = translate(model.top(), vec3(2.0f, 4.f, 4.0f));
+		model.top() = scale(model.top(), vec3(0.5f, 0.5f, 0.5f));//scale equally in all axis
+
 		glUniformMatrix4fv(modelID[currentShader], 1, GL_FALSE, &model.top()[0][0]);
 
-		/* Draw our sphere */
 		glBindTexture(GL_TEXTURE_2D, sphereTexID);
 		moon.drawSphere(drawmode);
 	}
@@ -305,10 +293,6 @@ void display()
 
 		model.top() = translate(model.top(), vec3(-x - 0.5, y, 0));
 		model.top() = scale(model.top(), vec3(model_scale, model_scale / 2.f, model_scale));//scale equally in all axis
-		model.top() = rotate(model.top(), -radians(angle_x), vec3(1, 0, 0)); //rotating in clockwise direction around x-axis
-		model.top() = rotate(model.top(), -radians(angle_y), vec3(0, 1, 0)); //rotating in clockwise direction around y-axis
-		model.top() = rotate(model.top(), -radians(angle_z), vec3(0, 0, 1)); //rotating in clockwise direction around z-axis
-
 
 		glUniformMatrix4fv(modelID[currentShader], 1, GL_FALSE, &model.top()[0][0]);
 
@@ -319,8 +303,11 @@ void display()
 	// 3D Model Aircraft
 	model.push(model.top());
 	{
-		glUniformMatrix4fv(modelID[currentShader], 1, GL_FALSE, &model.top()[0][0]);
+		model.top() = translate(model.top(), aircraft_position);
+		model.top() = translate(model.top(), vec3(0, aircraft_height, 0));
+		model.top() = scale(model.top(), vec3(0.15, 0.15, 0.15));
 
+		glUniformMatrix4fv(modelID[currentShader], 1, GL_FALSE, &model.top()[0][0]);
 		glBindTexture(GL_TEXTURE_2D, 0);
 
 		aircraft.drawObject(drawmode);
@@ -332,10 +319,8 @@ void display()
 	glDisableVertexAttribArray(0);
 	glUseProgram(0);
 
-	/* Modify our animation variables */
-	angle_x += angle_inc_x;
-	angle_y += angle_inc_y;
-	angle_z += angle_inc_z;
+	/* Modify animation variables */
+	aircraft_position += aircraft_velocity;
 }
 
 /* Called whenever the window is resized. The new window size is given, in pixels. */
@@ -359,12 +344,12 @@ static void keyCallback(GLFWwindow* window, int key, int s, int action, int mods
 	if (key == 'W') {
 		rotateX = glm::clamp(rotateX - 2.f, -90.f, 90.f);
 		//mat4 lookatTransform = mat4(1.f);
-		mat4 transform = mat4(1.f);
-		transform = rotate(mat4(1.0f), radians(2.f), vec3(0, 1, 0));
-		transform = translate(mat4(1.f), vec3(1, 0, 0));
+		//mat4 transform = mat4(1.f);
+		//transform = rotate(mat4(1.0f), radians(2.f), vec3(0, 1, 0));
+		//transform = translate(mat4(1.f), vec3(1, 0, 0));
 
-		//cameraLookAt = rotate(mat4(1.0f), radians(5.f), vec3(1, 0, 0)) * cameraLookAt;
-		cameraLookAt = transform * cameraLookAt;
+		////cameraLookAt = rotate(mat4(1.0f), radians(5.f), vec3(1, 0, 0)) * cameraLookAt;
+		//cameraLookAt = transform * cameraLookAt;
 	}
 
 	if (key == 'S')
@@ -380,17 +365,23 @@ static void keyCallback(GLFWwindow* window, int key, int s, int action, int mods
 		rotateY -= 2.f;
 
 	if (key == GLFW_KEY_UP)
-		moveFW += 2.f;
+		moveFW += 1.f;
 
 	if (key == GLFW_KEY_DOWN)
-		moveFW -= 2.f;
+		moveFW -= 1.f;
 
 
 	if (key == GLFW_KEY_LEFT)
-		moveSW += 2.f;
+		moveSW += 1.f;
 
 	if (key == GLFW_KEY_RIGHT)
-		moveSW -= 2.f;
+		moveSW -= 1.f;
+
+	if (key == '9')
+		moveUP += 1.f;
+
+	if (key == '0')
+		moveUP -= 1.f;
 
 
 	if (key == GLFW_KEY_F1)
@@ -426,8 +417,8 @@ static void keyCallback(GLFWwindow* window, int key, int s, int action, int mods
 		drawmode ++;
 		if (drawmode > 2) drawmode = 0;
 	}
-	cout << "angle_x: " << angle_x << ", angle_y: " << angle_y << ", angle_z: " << angle_z << ", x: " << x << endl;
-	cout << "cameraLookat: " << cameraLookAt.x << ", " << cameraLookAt.y << ", " << cameraLookAt.z << ", " << cameraLookAt.w << endl;
+	cout << "moveFW: " << moveFW << ", moveUP: " << moveUP << ", moveSW: " << moveSW << endl;
+	cout << "rotateX: " << rotateX << ", rotateY: " << rotateY << endl;
 }
 
 /* Entry point of program */

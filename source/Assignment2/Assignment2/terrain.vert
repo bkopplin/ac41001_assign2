@@ -28,11 +28,12 @@ void main()
 	// or brown. 
 	if (colourmode == 1)
 	{
-		diffuse_colour = vec4(colour, 1.0);
+		diffuse_colour = vec4(0.6, 0.4, 0.2, 1.0);
+
 	}
 	else
 	{
-		diffuse_colour = vec4(0.6, 0.4, 0.2, 1.0);
+		diffuse_colour = vec4(colour, 1.0);
 	}
 
 	ambient = diffuse_colour * 0.2;
