@@ -6,7 +6,8 @@ with texture coordinates.
 Iain Martin November 2018
 */
 
-#include "object3d.h"
+#include "wrapper_glfw.h"
+#include "tiny_loader.h"
 #include <iostream>
 #include <stdio.h>
 
@@ -19,28 +20,29 @@ Iain Martin November 2018
 using namespace std;
 using namespace glm;
 
-// Debig print method to print out the attributres loaded from the obj file
+// Debug print method to print out the attributres loaded from the obj file
 static  void PrintInfo(const tinyobj::attrib_t& attrib,
 	const vector<tinyobj::shape_t>& shapes,
 	const vector<tinyobj::material_t>& materials); 
 
-Object3D::Object3D()
+TinyObjLoader::TinyObjLoader()
 {
 	attribute_v_coord = 0;
 	attribute_v_colours = 1;
 	attribute_v_normal = 2;
+	attribute_v_texcoord = 3;
 
 	numVertices = 0;
 	numNormals = 0;
 	numTexCoords = 0;
 }
 
-Object3D::~Object3D()
+TinyObjLoader::~TinyObjLoader()
 {
 }
 
 
-void Object3D::load_obj(string inputfile, bool debugPrint)
+void TinyObjLoader::load_obj(string inputfile, bool debugPrint)
 {
 	tinyobj::attrib_t attrib;
 	vector<tinyobj::shape_t> shapes;
@@ -83,6 +85,11 @@ void Object3D::load_obj(string inputfile, bool debugPrint)
 	vector<tinyobj::real_t> pColors = attrib.colors;
 	vector<tinyobj::real_t> pTexCoords = attrib.texcoords;
 
+	// Create an array of normals, the same size as the vertices so that we can
+	// define one normal per vertex to copy into the VBOs
+	vector<tinyobj::real_t> pNormals_per_vertex;
+	pNormals_per_vertex.resize(pVertices.size());
+
 	numPIndexes = 0;
 	for (size_t s = 0; s < shapes.size(); s++) {
 		numPIndexes += shapes[s].mesh.num_face_vertices.size() * 3;//3 vertexes for each face
@@ -111,8 +118,14 @@ void Object3D::load_obj(string inputfile, bool debugPrint)
 				// access to vertex
 				tinyobj::index_t idx = shapes[s].mesh.indices[index_offset + v];
 				pIndices[ind] = idx.vertex_index;
-				ind++;
 
+				// Define the per-vertex normals so that each vertex has it's own normal
+				// defined in the same index of the array (i.e. pNormals[x] si the normal for pVertices[x]
+				pNormals_per_vertex[idx.vertex_index*3] = pNormals[idx.normal_index*3];
+				pNormals_per_vertex[idx.vertex_index * 3+1] = pNormals[idx.normal_index * 3+1];
+				pNormals_per_vertex[idx.vertex_index * 3+2] = pNormals[idx.normal_index * 3+2];
+
+				ind++;
 			}
 			index_offset += fv;
 
@@ -127,9 +140,10 @@ void Object3D::load_obj(string inputfile, bool debugPrint)
 	glBufferData(GL_ARRAY_BUFFER, pVertices.size() * sizeof(tinyobj::real_t), &pVertices.front(), GL_STATIC_DRAW);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 
+	// Note: we're copying in the normals_per_Vertex array, not the normals directly loading from the OBJ file
 	glGenBuffers(1, &normalBufferObject);
 	glBindBuffer(GL_ARRAY_BUFFER, normalBufferObject);
-	glBufferData(GL_ARRAY_BUFFER, pNormals.size() * sizeof(tinyobj::real_t), &pNormals.front(), GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, pNormals_per_vertex.size() * sizeof(tinyobj::real_t), &pNormals_per_vertex.front(), GL_STATIC_DRAW);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 
 	glGenBuffers(1, &colourBufferObject);
@@ -150,11 +164,11 @@ void Object3D::load_obj(string inputfile, bool debugPrint)
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
 	}
 
-	delete pIndices;
+	delete [] pIndices;
 }
 
 
-void Object3D::drawObject(int drawmode)
+void TinyObjLoader::drawObject(int drawmode)
 {
 
 	/* Draw the object as GL_POINTS */
@@ -205,7 +219,7 @@ void Object3D::drawObject(int drawmode)
  * If an object does not have colour values (e.g. through a material),
  * override the colours by setting the colours manually
  */
-void Object3D::overrideColour(glm::vec4 c)
+void TinyObjLoader::overrideColour(glm::vec4 c)
 {
 	vec4 *pColours = new vec4[numVertices];
 	for (int i = 0; i < numVertices; i++)

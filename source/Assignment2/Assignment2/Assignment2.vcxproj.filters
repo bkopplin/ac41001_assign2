@@ -37,10 +37,10 @@
     <ClCompile Include="..\..\common\sphere_tex.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="object3d.cpp">
+    <ClCompile Include="terrain_object.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="terrain_object.cpp">
+    <ClCompile Include="tiny_loader.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -49,6 +49,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="tiny_obj_loader.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="tiny_loader.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

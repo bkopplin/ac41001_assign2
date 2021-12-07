@@ -12,11 +12,11 @@ Iain Martin November 2018
 #include <vector>
 #include <glm/glm.hpp>
 
-class Object3D
+class TinyObjLoader
 {
 public:
-	Object3D();
-	~Object3D();
+	TinyObjLoader();
+	~TinyObjLoader();
 
 	void load_obj(std::string inputfile, bool debugPrint = false);
 	void drawObject(int drawmode);

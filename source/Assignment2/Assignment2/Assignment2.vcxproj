@@ -151,11 +151,12 @@
     <ClCompile Include="..\..\common\sphere_tex.cpp" />
     <ClCompile Include="..\..\common\wrapper_glfw.cpp" />
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="object3d.cpp" />
     <ClCompile Include="terrain_object.cpp" />
+    <ClCompile Include="tiny_loader.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="object3d.h" />
+    <ClInclude Include="tiny_loader.h" />
     <ClInclude Include="tiny_obj_loader.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

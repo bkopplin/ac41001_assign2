@@ -34,9 +34,12 @@ if you prefer */
 #include "glm/gtc/matrix_transform.hpp"
 #include <glm/gtc/type_ptr.hpp>
 
-#include "object3d.h"
+#include "tiny_loader.h"
 #include <stack>
 #include "terrain_object.h"
+
+using namespace std;
+using namespace glm;
 
 /* Define buffer object indices */
 GLuint positionBufferObject, colourObject, normalsBufferObject;
@@ -68,7 +71,7 @@ GLuint numspherevertices;
 Cube aCube(true);
 Sphere moon(true);
 
-Object3D monkey;
+TinyObjLoader aircraft;
 
 terrain_object* heightfield;
 int octaves;
@@ -77,12 +80,13 @@ GLfloat land_size;
 GLuint land_resolution;
 
 
-GLfloat rotateX, rotateY, viewScale;
+GLfloat rotateX, rotateY, moveFW, moveSW, moveUP, viewScale;
 
 GLfloat debug_goup;
 
-using namespace std;
-using namespace glm;
+vec4 cameraLookAt, cameraPos;
+
+
 
 bool load_texture(char* filename, GLuint& texID, bool bGenMipmaps);
 
@@ -145,7 +149,10 @@ void init(GLWrapper *glw)
 	colourmode = 0;
 	numlats = 60;		// Number of latitudes in our sphere
 	numlongs = 60;		// Number of longitudes in our sphere
-	rotateX = rotateY = 0.0;
+	rotateX = rotateY = moveFW = moveSW = moveUP = 0.0;
+
+	cameraLookAt = vec4(0, 0, 0, 1);
+	cameraPos = vec4(0, 10, 4, 1);
 
 	// Generate index (name) for one vertex array object
 	glGenVertexArrays(1, &vao);
@@ -191,7 +198,7 @@ void init(GLWrapper *glw)
 	//	exit(0);
 	//}
 
-	const char* textureFileMoon = "..//..//images//earth_no_clouds_8k.jpg";
+	const char* textureFileMoon = "..//..//images//moon.jpg";
 	if (!load_texture(textureFileMoon, sphereTexID, true)) {
 		cout << "Fatal error loading texture" << endl;
 		exit(0);
@@ -200,15 +207,15 @@ void init(GLWrapper *glw)
 	int loc = glGetUniformLocation(shaders[0], "tex1");
 	if (loc >= 0) glUniform1i(loc, 0);
 
-	monkey.load_obj("..//..//objects//crown_victoria2.obj");
-	monkey.overrideColour(vec4(1, 0, 1.0, 1.f));
+	aircraft.load_obj("..//..//objects//airbus.obj");
+	aircraft.overrideColour(vec4(1, 0, 1.0, 1.f));
 
 	/* Create the heightfield object */
 	octaves = 8;
 	perlin_scale = 8.5f;
 	perlin_frequency = 8.2f;
 	land_size = 10;
-	land_resolution = 250;
+	land_resolution = 150;
 	heightfield = new terrain_object(octaves, perlin_frequency, perlin_scale);
 	heightfield->createTerrain(land_resolution, land_resolution, land_size, land_size);
 	//heightfield->setColour(vec3(1, 0.2, 0.0));
@@ -237,17 +244,28 @@ void display()
 	mat4 projection = perspective(radians(30.0f), aspect_ratio, 0.1f, 100.0f);
 
 	// Camera matrix
-	mat4 view = lookAt(
-		vec3(0, 10, 4), // Camera is at (0,0,4), in World Space
-		vec3(0, 0, 0), // and looks at the origin
+	//mat4 view = lookAt(
+	//	vec3(0, 10, 4), // Camera is at (0,0,4), in World Space
+	//	vec3(0, 0, 0), // and looks at the origin
+	//	vec3(0, 1, 0)  // Head is up (set to 0,-1,0 to look upside-down)
+	//);
+
+		mat4 view = lookAt(
+		vec3(cameraPos.x / cameraPos.w, cameraPos.y / cameraPos.w, cameraPos.z / cameraPos.w), // Camera is at (0,0,4), in World Space
+		vec3(cameraLookAt.x / cameraLookAt.w, cameraLookAt.y / cameraLookAt.w, cameraLookAt.z / cameraLookAt.w), // and looks at the origin
 		vec3(0, 1, 0)  // Head is up (set to 0,-1,0 to look upside-down)
 	);
 
-	view = rotate(view, -radians(rotateX), vec3(1, 0, 0));
-	view = rotate(view, -radians(rotateY), vec3(0, 1, 0));
-	view = scale(view, vec3(viewScale));
-	//view = translate(view, vec3(0, 3, 0));
 
+	//view = rotate(view, -radians(rotateX), vec3(1, 0, 0));
+	//view = rotate(view, -radians(rotateY), vec3(0, 1, 0));
+	//view = scale(view, vec3(viewScale));
+	//view = translate(view, vec3(0, 3, 0));
+		//mat4 lookatTransform = rotate(mat4(0.f), -radians(0.f), vec3(1, 0, 0));
+
+	//mat4 lookatTransform = translate(mat4(0.f), vec3(moveFW, 0, moveSW));
+	//cameraPos = lookatTransform * cameraPos;
+	//cameraLookAt = lookatTransform * cameraLookAt;
 
 	glUniform1ui(colourmodeID[currentShader], colourmode);
 	glUniformMatrix4fv(viewID[currentShader], 1, GL_FALSE, &view[0][0]);
@@ -298,17 +316,16 @@ void display()
 	}
 	model.pop();
 
+	// 3D Model Aircraft
+	model.push(model.top());
+	{
+		glUniformMatrix4fv(modelID[currentShader], 1, GL_FALSE, &model.top()[0][0]);
 
-	//model.push(model.top());
-	//{
+		glBindTexture(GL_TEXTURE_2D, 0);
 
-	//	glUniformMatrix4fv(modelID, 1, GL_FALSE, &model.top()[0][0]);
-
-	//	glBindTexture(GL_TEXTURE_2D, 0);
-
-	//	monkey.drawObject(drawmode);
-	//}
-	//model.pop();
+		aircraft.drawObject(drawmode);
+	}
+	model.pop();
 
 
 
@@ -339,18 +356,42 @@ static void keyCallback(GLFWwindow* window, int key, int s, int action, int mods
 
 
 
-	if (key == 'W')
-		rotateX = glm::clamp(rotateX + 2.f, -90.f, 90.f);
+	if (key == 'W') {
+		rotateX = glm::clamp(rotateX - 2.f, -90.f, 90.f);
+		//mat4 lookatTransform = mat4(1.f);
+		mat4 transform = mat4(1.f);
+		transform = rotate(mat4(1.0f), radians(2.f), vec3(0, 1, 0));
+		transform = translate(mat4(1.f), vec3(1, 0, 0));
+
+		//cameraLookAt = rotate(mat4(1.0f), radians(5.f), vec3(1, 0, 0)) * cameraLookAt;
+		cameraLookAt = transform * cameraLookAt;
+	}
 
 	if (key == 'S')
-		rotateX = glm::clamp(rotateX - 2.f, -90.f, 90.f);
+		rotateX = glm::clamp(rotateX + 2.f, -90.f, 90.f);
 
 
-	if (key == 'D')
+	if (key == 'D') {
+		cameraPos = translate(mat4(1.f), vec3(1, 0, 0)) * cameraPos;
 		rotateY += 2.f;
+	}
 
 	if (key == 'A')
 		rotateY -= 2.f;
+
+	if (key == GLFW_KEY_UP)
+		moveFW += 2.f;
+
+	if (key == GLFW_KEY_DOWN)
+		moveFW -= 2.f;
+
+
+	if (key == GLFW_KEY_LEFT)
+		moveSW += 2.f;
+
+	if (key == GLFW_KEY_RIGHT)
+		moveSW -= 2.f;
+
 
 	if (key == GLFW_KEY_F1)
 		debug_goup += 0.2f;
@@ -386,7 +427,7 @@ static void keyCallback(GLFWwindow* window, int key, int s, int action, int mods
 		if (drawmode > 2) drawmode = 0;
 	}
 	cout << "angle_x: " << angle_x << ", angle_y: " << angle_y << ", angle_z: " << angle_z << ", x: " << x << endl;
-
+	cout << "cameraLookat: " << cameraLookAt.x << ", " << cameraLookAt.y << ", " << cameraLookAt.z << ", " << cameraLookAt.w << endl;
 }
 
 /* Entry point of program */
