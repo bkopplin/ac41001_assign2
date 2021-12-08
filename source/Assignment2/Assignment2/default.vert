@@ -1,6 +1,7 @@
-// Lab5 start vertex shader with Gouraud shading (vertex lighting). 
-// You need to edit this fiel to handle the texture coordinates
-// and to pass them through to the fragment shader
+/*
+AC41001 Graphics Assignment 2 
+Bjarne Kopplin 2021
+*/
 
 #version 420
 
@@ -31,8 +32,10 @@ void main()
 
 	diffuse_colour = vec4(1.0, 1.0, 1, 1.0);
 
+	// ambient lighting
 	ambient = diffuse_colour * 0.2;
 
+	// calculte diffuse lighting
 	mat4 mv_matrix = view * model;
 	mat3 n_matrix = transpose(inverse(mat3(mv_matrix)));
 	vec3 N = normalize(n_matrix * normal);
@@ -40,20 +43,9 @@ void main()
 
 	vec4 diffuse = max(dot(N, L), 0.0) * diffuse_colour;
 
-	vec4 P = mv_matrix * position_h;
-	vec3 V = normalize(-P.xyz);						// Viewing vector is reverse of vertex position in eye space
-	vec3 R = reflect(-L, N);						// Calculate the reflected beam, N defines the plane (see diagram on labsheet)
-	vec4 specular = pow(max(dot(R, V), 0), shininess) * specular_colour;	// Calculate specular component
-
-	// This is an alternative specular calculation: Blinn-Phong
-//	vec3 half_vec = normalize(L - P.xyz);
-//	vec4 specular = pow(max(dot(N, half_vec), 0.0), shininess) * specular_colour;
-
-	specular = vec4(0.f);
-	// Define the vertex colour
-	fcolour = diffuse + ambient + specular;
+	// pass values to fragment shader
+	fcolour = diffuse + ambient;
 	ftexcoord = texcoord;
-	// Define the vertex position
 	fposition = gl_Position = projection * view * model * position_h;
 }
 

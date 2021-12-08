@@ -1,5 +1,8 @@
-// Minimal fragment shader
-// Iain Martin 2018
+/*
+AC41001 Graphics Assignment 2 
+Bjarne Kopplin 2021
+*/
+
 
 #version 400
 
@@ -25,16 +28,15 @@ const float fogDensity = 0.05f;
 uint fogmode = 1;
 float fog_factor = 0;
 
-// control variables
-uint diffusemode = 1;
-uint specularmode = 1;
 
 void main()
 {
 vec4 diffuse_colour = fcolour;
-	vec3 diffuse = (diffusemode == 1) ? max(dot(N, L), 0.0) * (diffuse_colour.xyz / diffuse_colour.w) : vec3(0);
 
-	vec3 specular = (specularmode == 1) ? pow(max(dot(R, V), 0.0), shininess) * specular_colour : vec3(0);
+	// diffuse lighting calulation
+	vec3 diffuse = max(dot(N, L), 0.0) * (diffuse_colour.xyz / diffuse_colour.w);
+
+	vec3 specular =  pow(max(dot(R, V), 0.0), shininess) * specular_colour;
 
 
 	// fog
@@ -52,7 +54,6 @@ vec4 diffuse_colour = fcolour;
 
 	outputColor = mix(fog_colour, vec4((fambient + diffuse + specular), 1.0f) , fog_factor) ;
 
-	//outputColor = vec4(fambient + diffuse + specular, 1.0f);
 
 }
 

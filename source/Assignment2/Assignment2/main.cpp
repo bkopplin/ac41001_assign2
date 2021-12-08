@@ -1,5 +1,5 @@
 /*
-Assignment 2 
+AC41001 Graphics Assignment 2 
 Bjarne Kopplin 2021
 */
 
