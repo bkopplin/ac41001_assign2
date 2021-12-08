@@ -1,8 +1,6 @@
 /*
- Lab5start
- This is an starting project for lab5. The goal for you is to apply texture
- to both the cube and the sphere
- Iain Martin October 2018
+Assignment 2 
+Bjarne Kopplin 2021
 */
 
 
@@ -55,21 +53,16 @@ GLuint vao;
 GLuint colourmode;
 
 /* Position and view globals */
-GLfloat angle_x, angle_inc_x, x, model_scale, z, y;
-GLfloat angle_y, angle_inc_y, angle_z, angle_inc_z;
 GLuint drawmode;	
-GLuint numlats, numlongs;
 
 /* Uniforms*/
 GLuint modelID[NUM_SHADERS], viewID[NUM_SHADERS], projectionID[NUM_SHADERS];
 GLuint normalmatrixID[NUM_SHADERS];
-GLuint colourmodeID[NUM_SHADERS];
 GLuint cubeTexID;
 GLuint sphereTexID;
 
 GLfloat aspect_ratio;	
 GLuint numspherevertices;
-Cube aCube(true);
 Sphere moon(true);
 
 TinyObjLoader aircraft;
@@ -81,18 +74,18 @@ GLfloat land_size;
 GLuint land_resolution;
 
 
-GLfloat rotateX, rotateY, moveFW, moveSW, moveUP, viewScale;
-
-GLfloat debug_goup;
+GLfloat rotateX, rotateY;
 
 vec4 cameraLookAt, cameraPos;
 GLfloat aircraft_height;
 vec3 aircraft_velocity, aircraft_position;
 
-
-
-bool load_texture(char* filename, GLuint& texID, bool bGenMipmaps);
-
+/* 
+* Loads a texture that is stored in filename. 
+* filename: the filename of the texture
+* texID: the OpenGL texture ID to associate the loaded texture with
+* bGenMipmaps: wether or not to generate Mipmaps
+*/
 bool load_texture(const char* filename, GLuint& texID, bool bGenMipmaps) {
 
 	glGenTextures(1, &texID);
@@ -139,29 +132,15 @@ Use it for all your initialisation stuff
 */
 void init(GLWrapper *glw)
 {
-	debug_goup = 0;
 	/* Set the object transformation controls to their initial values */
-	x = -46;
-	y = 61;
-	z = 5;
-	angle_x = angle_y = angle_z = 0;
-	viewScale = 2.f;
-	angle_inc_x = angle_inc_y = angle_inc_z = 0;
-	model_scale = 1.f;
 	aspect_ratio = 1.3333f;
 	colourmode = 0;
-	numlats = 60;		// Number of latitudes in our sphere
-	numlongs = 60;		// Number of longitudes in our sphere
 	rotateX = 56;
 	rotateY = 144;
-	moveFW = 14.f;
-	moveSW = -12.0;
-	moveUP = -6.0;
 
 	cameraLookAt = vec4(0, 0, 0, 1);
 	cameraPos = vec4(0, 10, 4, 1);
 
-	//aircraft_height = 5.f;
 	aircraft_position = vec3(5, 5.f, -5);
 	aircraft_velocity = vec3(0, 0, 0.001);
 
@@ -171,8 +150,7 @@ void init(GLWrapper *glw)
 	// Create the vertex array object and make it current
 	glBindVertexArray(vao);
 
-	/* create the sphere and cube objects */
-	moon.makeSphere(numlats, numlongs);
+	moon.makeSphere(60, 60);
 
 	/* Load and build the vertex and fragment shaders */
 	try
@@ -192,17 +170,9 @@ void init(GLWrapper *glw)
 		modelID[i] = glGetUniformLocation(shaders[i], "model");
 		viewID[i] = glGetUniformLocation(shaders[i], "view");
 		projectionID[i] = glGetUniformLocation(shaders[i], "projection");
-		colourmodeID[i] = glGetUniformLocation(shaders[i], "colourmode");
 		normalmatrixID[i] = glGetUniformLocation(shaders[1], "normalmatrix");
 
 	}
-
-
-	// Enable face culling. This will cull the back faces of all
-	// triangles. Be careful to ensure that triangles are drawn
-	// with correct winding.
-	//glEnable(GL_CULL_FACE);
-	//glCullFace(GL_BACK);
 
 	stbi_set_flip_vertically_on_load(true);
 
@@ -222,14 +192,10 @@ void init(GLWrapper *glw)
 	octaves = 4;
 	perlin_scale = 12.f;
 	perlin_frequency = 10.f;	
-	//octaves = 10;
-	//perlin_scale = 8.5f;
-	//perlin_frequency = 8.2f;
 	land_size = 40;
 	land_resolution = 750;
 	heightfield = new terrain_object(octaves, perlin_frequency, perlin_scale);
 	heightfield->createTerrain(land_resolution, land_resolution, land_size, land_size);
-	//heightfield->setColour(vec3(1, 0.2, 0.0));
 	heightfield->setColourBasedOnHeight();
 	heightfield->createObject();
 }
@@ -261,14 +227,12 @@ void display()
 	);
 	view = rotate(view, -radians(rotateX), vec3(1, 0, 0));
 	view = rotate(view, -radians(rotateY), vec3(0, 1, 0));
-	view = scale(view, vec3(viewScale));
-	view = translate(view, vec3(moveSW, moveUP, moveFW));
+	view = scale(view, vec3(2.f));
+	view = translate(view, vec3(-12, -6, 14)); // moves the view to the correct location
 
-	glUniform1ui(colourmodeID[currentShader], colourmode);
 	glUniformMatrix4fv(viewID[currentShader], 1, GL_FALSE, &view[0][0]);
 	glUniformMatrix4fv(projectionID[currentShader], 1, GL_FALSE, &projection[0][0]);
 
-	// Define the model transformations for the cube
 	stack<mat4> model;
 	model.push(mat4(1.0f));
 
@@ -278,9 +242,10 @@ void display()
 	
 		model.top() = translate(model.top(), vec3(2.0f, 6.f, 4.0f));
 		model.top() = scale(model.top(), vec3(0.5f, 0.5f, 0.5f));//scale equally in all axis
-		model.top() = rotate(model.top(), glm::radians(y), vec3(0, 1, 0));
-		model.top() = rotate(model.top(), glm::radians(x), vec3(1, 0, 0));
-		model.top() = rotate(model.top(), glm::radians(z), vec3(0, 0, 1));
+		// rotate so that the correct moon texture is facing the viewer
+		model.top() = rotate(model.top(), glm::radians(61.f), vec3(0, 1, 0));
+		model.top() = rotate(model.top(), glm::radians(-46.f), vec3(1, 0, 0));
+		model.top() = rotate(model.top(), glm::radians(5.f), vec3(0, 0, 1));
 
 		glUniformMatrix4fv(modelID[currentShader], 1, GL_FALSE, &model.top()[0][0]);
 
@@ -293,15 +258,14 @@ void display()
 	// terrain
 	model.push(model.top());
 	{
+		// use the terrain shader
 		currentShader = 1;
 		glUseProgram(shaders[currentShader]);
-		// Send our uniforms variables to the currently bound shader,
-		glUniform1ui(colourmodeID[currentShader], colourmode);
 		glUniformMatrix4fv(projectionID[currentShader], 1, GL_FALSE, &projection[0][0]);
 		glUniformMatrix4fv(viewID[currentShader], 1, GL_FALSE, &view[0][0]);
 
 		model.top() = translate(model.top(), vec3(-0.05 - 0.5, 0, 0));
-		model.top() = scale(model.top(), vec3(model_scale, model_scale / 2.f, model_scale));//scale equally in all axis
+		model.top() = scale(model.top(), vec3(1, 1 / 2.f, 1));//scale equally in all axis
 
 		mat4 normalmatrix = transpose(inverse(mat3(view * model.top())));
 		glUniformMatrix3fv(normalmatrixID[currentShader], 1, GL_FALSE, &normalmatrix[0][0]);
@@ -314,10 +278,9 @@ void display()
 	// 3D Model Aircraft
 	model.push(model.top());
 	{
+		// use the same shader as the heightfield
 		model.top() = translate(model.top(), aircraft_position);
-	//	model.top() = translate(model.top(), vec3(0, aircraft_height, 0));
 		model.top() = scale(model.top(), vec3(0.15, 0.15, 0.15));
-		//model.top() = scale(model.top(), vec3(0.015, 0.015, 0.015));
 
 		mat4 normalmatrix = transpose(inverse(mat3(view * model.top())));
 		glUniformMatrix3fv(normalmatrixID[currentShader], 1, GL_FALSE, &normalmatrix[0][0]);
@@ -334,7 +297,7 @@ void display()
 	glUseProgram(0);
 
 	/* Modify animation variables */
-	aircraft_position += aircraft_velocity;
+	aircraft_position += aircraft_velocity; // move the aircraft
 }
 
 /* Called whenever the window is resized. The new window size is given, in pixels. */
@@ -354,66 +317,21 @@ static void keyCallback(GLFWwindow* window, int key, int s, int action, int mods
 		glfwSetWindowShouldClose(window, GL_TRUE);
 
 
-
+	// Look down
 	if (key == 'S') 
 		rotateX = glm::clamp(rotateX - 2.f, 50.f, 70.f);
 
+	// Look up
 	if (key == 'W')
 		rotateX = glm::clamp(rotateX + 2.f, 50.f, 70.f);
 
-
+	// Move view to the right
 	if (key == 'D') 
 		rotateY = glm::clamp(rotateY - 2.f, 110.f, 160.f);
 
+	// Move view to the left
 	if (key == 'A')
 		rotateY = glm::clamp(rotateY + 2.f, 110.f, 160.f);
-
-	if (key == GLFW_KEY_UP)
-		moveFW += 1.f;
-
-	if (key == GLFW_KEY_DOWN)
-		moveFW -= 1.f;
-
-
-	if (key == GLFW_KEY_LEFT)
-		moveSW += 1.f;
-
-	if (key == GLFW_KEY_RIGHT)
-		moveSW -= 1.f;
-
-	if (key == '9')
-		moveUP += 1.f;
-
-	if (key == '0')
-		moveUP -= 1.f;
-
-
-	if (key == GLFW_KEY_F1)
-		debug_goup += 0.2f;
-
-	if (key == 'Q') angle_x -= 1.f;
-	if (key == 'P') angle_x += 1.f;
-	if (key == 'E') angle_inc_y -= 0.05f;
-	if (key == 'R') angle_inc_y += 0.05f;
-	if (key == 'T') angle_inc_z -= 0.05f;
-	if (key == 'Y') angle_inc_z += 0.05f;
-	if (key == 'Z') x -= 1.f;
-	if (key == 'X') x += 1.f;
-	if (key == 'C') y -= 1.f;
-	if (key == 'V') y += 1.f;
-	if (key == 'B') z -= 1.f;
-	if (key == 'N') z += 1.f;
-
-	if (key == '-')
-		viewScale -= 0.2f;
-
-	if (key == ']')
-		viewScale += 0.2f;	
-
-	if (key == 'M' && action != GLFW_PRESS)
-	{
-		colourmode = !colourmode;
-	}
 
 	/* Cycle between drawing vertices, mesh and filled polygons */
 	if (key == ',' && action != GLFW_PRESS)
@@ -421,9 +339,17 @@ static void keyCallback(GLFWwindow* window, int key, int s, int action, int mods
 		drawmode ++;
 		if (drawmode > 2) drawmode = 0;
 	}
-	//cout << "moveFW: " << moveFW << ", moveUP: " << moveUP << ", moveSW: " << moveSW << endl;
-	//cout << "rotateX: " << rotateX << ", rotateY: " << rotateY << endl;
-	cout << "x: " << x << " y: " << y << " z: " << z << endl;
+
+}
+
+void printInstructions() {
+	cout << endl
+		<< "----------------------------------" << endl
+		<< "          INSTRUCTIONS" << endl
+		<< "----------------------------------" << endl << endl
+		<< "* Look around\t\t -- W, A, S, D" << endl << endl
+		<< "* Toggle Drawmode\t -- ," << endl << endl;
+
 }
 
 /* Entry point of program */
@@ -442,7 +368,7 @@ int main(int argc, char* argv[])
 	glw->setReshapeCallback(reshape);
 
 	init(glw);
-
+	printInstructions();
 	glw->eventLoop();
 
 	delete(glw);

@@ -27,11 +27,9 @@ void main()
 	vec4 diffuse_colour = vec4(0.5,0.5,0,1.0);
 	vec4 position_h = vec4(position, 1.0);
 	float shininess = 8.0;
-	
-	if (colourmode == 1)
-		diffuse_colour = colour;
-	else
-		diffuse_colour = vec4(1.0, 1.0, 1, 1.0);
+
+
+	diffuse_colour = vec4(1.0, 1.0, 1, 1.0);
 
 	ambient = diffuse_colour * 0.2;
 

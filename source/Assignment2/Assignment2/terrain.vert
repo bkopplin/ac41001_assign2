@@ -10,7 +10,6 @@ layout(location = 2) in vec3 normal;
 
 // Uniform variables are passed in from the application
 uniform mat4 model, view, projection;
-uniform uint colourmode;
 uniform mat3 normalmatrix;
 
 out vec3 fambient;
