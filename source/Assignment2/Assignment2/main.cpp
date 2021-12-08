@@ -161,8 +161,8 @@ void init(GLWrapper *glw)
 	cameraLookAt = vec4(0, 0, 0, 1);
 	cameraPos = vec4(0, 10, 4, 1);
 
-	aircraft_height = 2.f;
-	aircraft_position = vec3(0, 0, 0);
+	//aircraft_height = 5.f;
+	aircraft_position = vec3(5, 5.f, -5);
 	aircraft_velocity = vec3(0, 0, 0.001);
 
 	// Generate index (name) for one vertex array object
@@ -215,7 +215,7 @@ void init(GLWrapper *glw)
 	int loc = glGetUniformLocation(shaders[0], "tex1");
 	if (loc >= 0) glUniform1i(loc, 0);
 
-	aircraft.load_obj("..//..//objects//monkey_normals.obj");
+	aircraft.load_obj("..//..//objects//star_destroyer.obj");
 	aircraft.overrideColour(vec4(0.7f, 0.7f, 0.7f, 1.f));
 
 	/* Create the heightfield object */
@@ -315,7 +315,7 @@ void display()
 	model.push(model.top());
 	{
 		model.top() = translate(model.top(), aircraft_position);
-		model.top() = translate(model.top(), vec3(0, aircraft_height, 0));
+	//	model.top() = translate(model.top(), vec3(0, aircraft_height, 0));
 		model.top() = scale(model.top(), vec3(0.15, 0.15, 0.15));
 		//model.top() = scale(model.top(), vec3(0.015, 0.015, 0.015));
 
