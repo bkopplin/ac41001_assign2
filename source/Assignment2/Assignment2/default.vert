@@ -51,6 +51,7 @@ void main()
 //	vec3 half_vec = normalize(L - P.xyz);
 //	vec4 specular = pow(max(dot(N, half_vec), 0.0), shininess) * specular_colour;
 
+	specular = vec4(0.f);
 	// Define the vertex colour
 	fcolour = diffuse + ambient + specular;
 	ftexcoord = texcoord;

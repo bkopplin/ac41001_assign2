@@ -62,6 +62,7 @@ GLuint numlats, numlongs;
 
 /* Uniforms*/
 GLuint modelID[NUM_SHADERS], viewID[NUM_SHADERS], projectionID[NUM_SHADERS];
+GLuint normalmatrixID[NUM_SHADERS];
 GLuint colourmodeID[NUM_SHADERS];
 GLuint cubeTexID;
 GLuint sphereTexID;
@@ -151,10 +152,10 @@ void init(GLWrapper *glw)
 	colourmode = 0;
 	numlats = 60;		// Number of latitudes in our sphere
 	numlongs = 60;		// Number of longitudes in our sphere
-	rotateX = 40;
-	rotateY = 170;
-	moveFW = 8.f;
-	moveSW = 0.0;
+	rotateX = 56;
+	rotateY = 144;
+	moveFW = 14.f;
+	moveSW = -12.0;
 	moveUP = -6.0;
 
 	cameraLookAt = vec4(0, 0, 0, 1);
@@ -192,6 +193,8 @@ void init(GLWrapper *glw)
 		viewID[i] = glGetUniformLocation(shaders[i], "view");
 		projectionID[i] = glGetUniformLocation(shaders[i], "projection");
 		colourmodeID[i] = glGetUniformLocation(shaders[i], "colourmode");
+		normalmatrixID[i] = glGetUniformLocation(shaders[1], "normalmatrix");
+
 	}
 
 
@@ -212,15 +215,18 @@ void init(GLWrapper *glw)
 	int loc = glGetUniformLocation(shaders[0], "tex1");
 	if (loc >= 0) glUniform1i(loc, 0);
 
-	aircraft.load_obj("..//..//objects//airbus.obj");
+	aircraft.load_obj("..//..//objects//monkey_normals.obj");
 	aircraft.overrideColour(vec4(0.7f, 0.7f, 0.7f, 1.f));
 
 	/* Create the heightfield object */
-	octaves = 8;
-	perlin_scale = 8.5f;
-	perlin_frequency = 8.2f;
-	land_size = 10;
-	land_resolution = 1450;
+	octaves = 4;
+	perlin_scale = 12.f;
+	perlin_frequency = 10.f;	
+	//octaves = 10;
+	//perlin_scale = 8.5f;
+	//perlin_frequency = 8.2f;
+	land_size = 40;
+	land_resolution = 450;
 	heightfield = new terrain_object(octaves, perlin_frequency, perlin_scale);
 	heightfield->createTerrain(land_resolution, land_resolution, land_size, land_size);
 	//heightfield->setColour(vec3(1, 0.2, 0.0));
@@ -233,7 +239,7 @@ void init(GLWrapper *glw)
 void display()
 {
 	/* Define the background colour */
-	glClearColor(0.4f, 0.4f, 0.4f, 1.0f);
+	glClearColor(0.1, 0.1, 0.1, 1.0f);
 
 	/* Clear the colour and frame buffers */
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -294,6 +300,8 @@ void display()
 		model.top() = translate(model.top(), vec3(-x - 0.5, y, 0));
 		model.top() = scale(model.top(), vec3(model_scale, model_scale / 2.f, model_scale));//scale equally in all axis
 
+		mat4 normalmatrix = transpose(inverse(mat3(view * model.top())));
+		glUniformMatrix3fv(normalmatrixID[currentShader], 1, GL_FALSE, &normalmatrix[0][0]);
 		glUniformMatrix4fv(modelID[currentShader], 1, GL_FALSE, &model.top()[0][0]);
 
 		heightfield->drawObject(drawmode);
@@ -307,6 +315,8 @@ void display()
 		model.top() = translate(model.top(), vec3(0, aircraft_height, 0));
 		model.top() = scale(model.top(), vec3(0.15, 0.15, 0.15));
 
+		mat4 normalmatrix = transpose(inverse(mat3(view * model.top())));
+		glUniformMatrix3fv(normalmatrixID[currentShader], 1, GL_FALSE, &normalmatrix[0][0]);
 		glUniformMatrix4fv(modelID[currentShader], 1, GL_FALSE, &model.top()[0][0]);
 		glBindTexture(GL_TEXTURE_2D, 0);
 
@@ -341,28 +351,20 @@ static void keyCallback(GLFWwindow* window, int key, int s, int action, int mods
 
 
 
-	if (key == 'W') {
-		rotateX = glm::clamp(rotateX - 2.f, -90.f, 90.f);
-		//mat4 lookatTransform = mat4(1.f);
-		//mat4 transform = mat4(1.f);
-		//transform = rotate(mat4(1.0f), radians(2.f), vec3(0, 1, 0));
-		//transform = translate(mat4(1.f), vec3(1, 0, 0));
+	if (key == 'S') 
+		rotateX = glm::clamp(rotateX - 2.f, 50.f, 70.f);
 
-		////cameraLookAt = rotate(mat4(1.0f), radians(5.f), vec3(1, 0, 0)) * cameraLookAt;
-		//cameraLookAt = transform * cameraLookAt;
-	}
-
-	if (key == 'S')
-		rotateX = glm::clamp(rotateX + 2.f, -90.f, 90.f);
+	if (key == 'W')
+		rotateX = glm::clamp(rotateX + 2.f, 50.f, 70.f);
 
 
 	if (key == 'D') {
-		cameraPos = translate(mat4(1.f), vec3(1, 0, 0)) * cameraPos;
-		rotateY += 2.f;
+	//	cameraPos = translate(mat4(1.f), vec3(1, 0, 0)) * cameraPos;
+		rotateY = glm::clamp(rotateY - 2.f, 110.f, 160.f);
 	}
 
 	if (key == 'A')
-		rotateY -= 2.f;
+		rotateY = glm::clamp(rotateY + 2.f, 110.f, 160.f);
 
 	if (key == GLFW_KEY_UP)
 		moveFW += 1.f;
