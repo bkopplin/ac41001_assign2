@@ -56,27 +56,3 @@ vec4 diffuse_colour = fcolour;
 
 }
 
-///
-//in vec3 fambient;
-//in vec3 N, L, R, V;
-//in float dL; // distance to light source
-//
-//uniform uint specularmode;
-//uniform float shininess;
-//uniform uint emitmode, attenuationmode, diffusemode;
-//
-//vec3 specular_colour = vec3(1.0, 0.8, 0.6);
-//
-//out vec4 outputColor;
-//
-//void main()
-//{
-//	vec3 emissive = (emitmode == 1) ? vec3(1.0, 1.0, 0.8) : vec3(0);
-//
-//	vec4 diffuse_colour = fcolour;
-//	vec3 diffuse = (diffusemode == 1) ? max(dot(N, L), 0.0) * (diffuse_colour.xyz / diffuse_colour.w) : vec3(0);
-//
-//	vec3 specular = (specularmode == 1) ? pow(max(dot(R, V), 0.0), shininess) * specular_colour : vec3(0);
-//
-//	outputColor = vec4(fambient + diffuse + specular + emissive, 1.0f);
-//}

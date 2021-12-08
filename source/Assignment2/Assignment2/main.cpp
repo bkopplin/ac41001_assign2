@@ -141,9 +141,9 @@ void init(GLWrapper *glw)
 {
 	debug_goup = 0;
 	/* Set the object transformation controls to their initial values */
-	x = 0.05f;
-	y = 0;
-	z = 0;
+	x = -46;
+	y = 61;
+	z = 5;
 	angle_x = angle_y = angle_z = 0;
 	viewScale = 2.f;
 	angle_inc_x = angle_inc_y = angle_inc_z = 0;
@@ -226,7 +226,7 @@ void init(GLWrapper *glw)
 	//perlin_scale = 8.5f;
 	//perlin_frequency = 8.2f;
 	land_size = 40;
-	land_resolution = 450;
+	land_resolution = 750;
 	heightfield = new terrain_object(octaves, perlin_frequency, perlin_scale);
 	heightfield->createTerrain(land_resolution, land_resolution, land_size, land_size);
 	//heightfield->setColour(vec3(1, 0.2, 0.0));
@@ -276,8 +276,11 @@ void display()
 	model.push(model.top());
 	{
 	
-		model.top() = translate(model.top(), vec3(2.0f, 4.f, 4.0f));
+		model.top() = translate(model.top(), vec3(2.0f, 6.f, 4.0f));
 		model.top() = scale(model.top(), vec3(0.5f, 0.5f, 0.5f));//scale equally in all axis
+		model.top() = rotate(model.top(), glm::radians(y), vec3(0, 1, 0));
+		model.top() = rotate(model.top(), glm::radians(x), vec3(1, 0, 0));
+		model.top() = rotate(model.top(), glm::radians(z), vec3(0, 0, 1));
 
 		glUniformMatrix4fv(modelID[currentShader], 1, GL_FALSE, &model.top()[0][0]);
 
@@ -297,7 +300,7 @@ void display()
 		glUniformMatrix4fv(projectionID[currentShader], 1, GL_FALSE, &projection[0][0]);
 		glUniformMatrix4fv(viewID[currentShader], 1, GL_FALSE, &view[0][0]);
 
-		model.top() = translate(model.top(), vec3(-x - 0.5, y, 0));
+		model.top() = translate(model.top(), vec3(-0.05 - 0.5, 0, 0));
 		model.top() = scale(model.top(), vec3(model_scale, model_scale / 2.f, model_scale));//scale equally in all axis
 
 		mat4 normalmatrix = transpose(inverse(mat3(view * model.top())));
@@ -314,6 +317,7 @@ void display()
 		model.top() = translate(model.top(), aircraft_position);
 		model.top() = translate(model.top(), vec3(0, aircraft_height, 0));
 		model.top() = scale(model.top(), vec3(0.15, 0.15, 0.15));
+		//model.top() = scale(model.top(), vec3(0.015, 0.015, 0.015));
 
 		mat4 normalmatrix = transpose(inverse(mat3(view * model.top())));
 		glUniformMatrix3fv(normalmatrixID[currentShader], 1, GL_FALSE, &normalmatrix[0][0]);
@@ -358,10 +362,8 @@ static void keyCallback(GLFWwindow* window, int key, int s, int action, int mods
 		rotateX = glm::clamp(rotateX + 2.f, 50.f, 70.f);
 
 
-	if (key == 'D') {
-	//	cameraPos = translate(mat4(1.f), vec3(1, 0, 0)) * cameraPos;
+	if (key == 'D') 
 		rotateY = glm::clamp(rotateY - 2.f, 110.f, 160.f);
-	}
 
 	if (key == 'A')
 		rotateY = glm::clamp(rotateY + 2.f, 110.f, 160.f);
@@ -395,12 +397,12 @@ static void keyCallback(GLFWwindow* window, int key, int s, int action, int mods
 	if (key == 'R') angle_inc_y += 0.05f;
 	if (key == 'T') angle_inc_z -= 0.05f;
 	if (key == 'Y') angle_inc_z += 0.05f;
-	if (key == 'Z') x -= 0.5f;
-	if (key == 'X') x += 0.5f;
-	if (key == 'C') y -= 0.2f;
-	if (key == 'V') y += 0.2f;
-	if (key == 'B') z -= 0.2f;
-	if (key == 'N') z += 0.2f;
+	if (key == 'Z') x -= 1.f;
+	if (key == 'X') x += 1.f;
+	if (key == 'C') y -= 1.f;
+	if (key == 'V') y += 1.f;
+	if (key == 'B') z -= 1.f;
+	if (key == 'N') z += 1.f;
 
 	if (key == '-')
 		viewScale -= 0.2f;
@@ -419,8 +421,9 @@ static void keyCallback(GLFWwindow* window, int key, int s, int action, int mods
 		drawmode ++;
 		if (drawmode > 2) drawmode = 0;
 	}
-	cout << "moveFW: " << moveFW << ", moveUP: " << moveUP << ", moveSW: " << moveSW << endl;
-	cout << "rotateX: " << rotateX << ", rotateY: " << rotateY << endl;
+	//cout << "moveFW: " << moveFW << ", moveUP: " << moveUP << ", moveSW: " << moveSW << endl;
+	//cout << "rotateX: " << rotateX << ", rotateY: " << rotateY << endl;
+	cout << "x: " << x << " y: " << y << " z: " << z << endl;
 }
 
 /* Entry point of program */
