@@ -388,8 +388,6 @@ void terrain_object::setColourBasedOnHeight()
 		// with some random variations
 		if (height <= sea_norm)
 			colours[i] = glm::vec3(0.3 + rand2, 0.3 + rand2, 0.9);
-		//else if (height <= 0.52 + rand3)
-		//	colours[i] = glm::vec3(0.7 + rand2, 0.7, 0.2);
 		else if (height <= 0.6 + rand3)
 			colours[i] = glm::vec3(0.2, 0.7 + rand, 0.2);
 		else if (height <= 0.93 + rand3)

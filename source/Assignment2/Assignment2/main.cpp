@@ -142,7 +142,7 @@ void init(GLWrapper *glw)
 	cameraPos = vec4(0, 10, 4, 1);
 
 	aircraft_position = vec3(5, 5.f, -5);
-	aircraft_velocity = vec3(0, 0, 0.001);
+	aircraft_velocity = vec3(0, 0, 0.003);
 
 	// Generate index (name) for one vertex array object
 	glGenVertexArrays(1, &vao);
@@ -176,15 +176,18 @@ void init(GLWrapper *glw)
 
 	stbi_set_flip_vertically_on_load(true);
 
+	// load in a texture of the moon
 	const char* textureFileMoon = "..//..//images//moon.jpg";
 	if (!load_texture(textureFileMoon, sphereTexID, true)) {
 		cout << "Fatal error loading texture" << endl;
 		exit(0);
 	}
 
+	// assign texture to shader program 0
 	int loc = glGetUniformLocation(shaders[0], "tex1");
 	if (loc >= 0) glUniform1i(loc, 0);
 
+	// load a 3D object and set its colour
 	aircraft.load_obj("..//..//objects//star_destroyer.obj");
 	aircraft.overrideColour(vec4(0.7f, 0.7f, 0.7f, 1.f));
 
@@ -193,7 +196,7 @@ void init(GLWrapper *glw)
 	perlin_scale = 12.f;
 	perlin_frequency = 10.f;	
 	land_size = 40;
-	land_resolution = 750;
+	land_resolution = 850;
 	heightfield = new terrain_object(octaves, perlin_frequency, perlin_scale);
 	heightfield->createTerrain(land_resolution, land_resolution, land_size, land_size);
 	heightfield->setColourBasedOnHeight();
@@ -220,11 +223,13 @@ void display()
 	// Projection matrix : 45° Field of View, 4:3 ratio, display range : 0.1 unit <-> 100 units
 	mat4 projection = perspective(radians(30.0f), aspect_ratio, 0.1f, 100.0f);
 
+	// create a view matrix
 	mat4 view = lookAt(
 		vec3(0, 10, 4),
 		vec3(0, 0, 0),
 		vec3(0, 1, 0)
 	);
+	// change view matrix according to camera inputs and position it correctly
 	view = rotate(view, -radians(rotateX), vec3(1, 0, 0));
 	view = rotate(view, -radians(rotateY), vec3(0, 1, 0));
 	view = scale(view, vec3(2.f));
@@ -255,7 +260,7 @@ void display()
 	model.pop();
 
 
-	// terrain
+	// heightfield
 	model.push(model.top());
 	{
 		// use the terrain shader
@@ -264,6 +269,7 @@ void display()
 		glUniformMatrix4fv(projectionID[currentShader], 1, GL_FALSE, &projection[0][0]);
 		glUniformMatrix4fv(viewID[currentShader], 1, GL_FALSE, &view[0][0]);
 
+		// move and scale the heightfield
 		model.top() = translate(model.top(), vec3(-0.05 - 0.5, 0, 0));
 		model.top() = scale(model.top(), vec3(1, 1 / 2.f, 1));//scale equally in all axis
 
@@ -275,13 +281,14 @@ void display()
 	}
 	model.pop();
 
-	// 3D Model Aircraft
+	// 3D Model Aircraft ( Star Destroyer )
 	model.push(model.top());
 	{
 		// use the same shader as the heightfield
 		model.top() = translate(model.top(), aircraft_position);
 		model.top() = scale(model.top(), vec3(0.15, 0.15, 0.15));
 
+		// pass normal matrix down for lighting calculation
 		mat4 normalmatrix = transpose(inverse(mat3(view * model.top())));
 		glUniformMatrix3fv(normalmatrixID[currentShader], 1, GL_FALSE, &normalmatrix[0][0]);
 		glUniformMatrix4fv(modelID[currentShader], 1, GL_FALSE, &model.top()[0][0]);

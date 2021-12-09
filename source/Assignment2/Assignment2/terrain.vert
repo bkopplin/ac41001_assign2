@@ -20,7 +20,7 @@ out vec4 fcolour;
 out vec4 fposition;
 
 vec4 ambient = vec4(0.2, 0.2,0.2,1.0);
-vec3 light_dir = vec3(0.0, 10.0, 10.0);
+vec3 light_dir = vec3(2.0f, 6.f, 4.0f); // same as the moons position.
 
 void main()
 {
